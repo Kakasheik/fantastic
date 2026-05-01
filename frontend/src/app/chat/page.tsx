@@ -1,6 +1,7 @@
 'use client';
 import { Plus, Filter, Search } from 'lucide-react';
 import { useState } from 'react';
+import { Toggle } from '@/components/ui/toggle';
 
 /**
  * /chat — Lista de conversas (estilo Privacy).
@@ -10,8 +11,7 @@ export default function ChatPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-0 md:px-4 grid md:grid-cols-[360px,1fr] min-h-[calc(100dvh-128px)]">
-      {/* Sidebar de conversas */}
-      <aside className="border-r border-border bg-surface1 md:rounded-l-2xl">
+      <aside className="md:border-r border-border bg-surface1 md:rounded-l-2xl">
         <header className="flex items-center justify-between p-4">
           <h1 className="font-semibold text-text">Conversas</h1>
           <div className="flex items-center gap-1">
@@ -37,18 +37,7 @@ export default function ChatPage() {
 
         <div className="px-4 mt-4 flex items-center justify-between">
           <span className="text-sm text-text">Exibir apenas usuários online</span>
-          <button
-            onClick={() => setOnlyOnline((v) => !v)}
-            className={`w-10 h-6 rounded-full transition-colors ${onlyOnline ? 'bg-brand' : 'bg-border'} relative`}
-            aria-pressed={onlyOnline}
-            aria-label="Alternar usuários online"
-          >
-            <span
-              className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                onlyOnline ? 'translate-x-[18px]' : 'translate-x-0.5'
-              }`}
-            />
-          </button>
+          <Toggle on={onlyOnline} onChange={setOnlyOnline} ariaLabel="Alternar usuários online" />
         </div>
 
         <div className="mt-12 text-center text-sm italic text-muted px-4">
@@ -56,7 +45,6 @@ export default function ChatPage() {
         </div>
       </aside>
 
-      {/* Área central */}
       <section className="hidden md:flex items-center justify-center text-muted">
         Selecione uma conversa para começar
       </section>

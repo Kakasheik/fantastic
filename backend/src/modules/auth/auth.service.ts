@@ -61,8 +61,9 @@ export class AuthService {
   }
 
   /**
-   * Completa o cadastro com dados pessoais (CPF, nome, DOB, telefone).
+   * Completa o cadastro com dados pessoais (CPF, nome, DOB, telefone, e-mail opcional).
    * Chamado dentro do fluxo de checkout.
+   * SECURITY: Se e-mail mudou, valida unicidade antes de aceitar.
    */
   async completeProfile(userId: string, input: {
     fullName: string;
@@ -70,12 +71,27 @@ export class AuthService {
     phone: string;
     dateOfBirth: string;
     nickname?: string;
+    email?: string;
   }): Promise<void> {
     const dob = new Date(input.dateOfBirth);
     if (isNaN(dob.getTime())) throw new BadRequestException('Data de nascimento inválida');
 
     const age = (Date.now() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
     if (age < 18) throw new BadRequestException('É necessário ter 18 anos ou mais');
+
+    // Se e-mail foi enviado e diferente do atual, valida unicidade
+    let emailUpdate: { email: string } | undefined;
+    if (input.email) {
+      const cur = await this.prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+      const newEmail = input.email.toLowerCase();
+      if (cur && cur.email !== newEmail) {
+        const taken = await this.prisma.user.findFirst({
+          where: { email: newEmail, id: { not: userId } },
+        });
+        if (taken) throw new ConflictException('E-mail já cadastrado por outro usuário');
+        emailUpdate = { email: newEmail };
+      }
+    }
 
     await this.prisma.user.update({
       where: { id: userId },
@@ -86,6 +102,7 @@ export class AuthService {
         dateOfBirth: dob,
         nickname:    input.nickname,
         isVerified:  true,
+        ...(emailUpdate ?? {}),
       },
     });
   }

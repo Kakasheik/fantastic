@@ -117,7 +117,7 @@ export function CampaignForm({ onClose, onCreated }: { onClose: () => void; onCr
 }
 
 const inputCls =
-  'w-full h-10 px-3 rounded-lg bg-surface2 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary';
+  'w-full h-10 px-3 rounded-lg bg-surface2 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand';
 
 function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (

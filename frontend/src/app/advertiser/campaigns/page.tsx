@@ -82,13 +82,13 @@ export default function CampaignsPage() {
 
 function StatusBadge({ status }: { status: Campaign['status'] }) {
   const map = {
-    DRAFT:           { label: 'Rascunho',     cls: 'bg-zinc-500/20 text-zinc-300' },
-    PENDING_REVIEW:  { label: 'Em análise',   cls: 'bg-amber-500/20 text-amber-300' },
-    ACTIVE:          { label: 'Ativa',        cls: 'bg-emerald-500/20 text-emerald-300' },
-    PAUSED:          { label: 'Pausada',      cls: 'bg-zinc-500/20 text-zinc-300' },
-    FINISHED:        { label: 'Finalizada',   cls: 'bg-blue-500/20 text-blue-300' },
-    REJECTED:        { label: 'Rejeitada',    cls: 'bg-red-500/20 text-red-300' },
+    DRAFT:           { label: 'Rascunho',     cls: 'bg-zinc-100 text-zinc-700' },
+    PENDING_REVIEW:  { label: 'Em análise',   cls: 'bg-amber-50 text-amber-700' },
+    ACTIVE:          { label: 'Ativa',        cls: 'bg-emerald-50 text-emerald-700' },
+    PAUSED:          { label: 'Pausada',      cls: 'bg-zinc-100 text-zinc-700' },
+    FINISHED:        { label: 'Finalizada',   cls: 'bg-blue-50 text-blue-700' },
+    REJECTED:        { label: 'Rejeitada',    cls: 'bg-red-50 text-red-700' },
   };
   const m = map[status];
-  return <span className={`px-2 py-1 rounded text-xs ${m.cls}`}>{m.label}</span>;
+  return <span className={`px-2 py-1 rounded-full text-xs font-medium ${m.cls}`}>{m.label}</span>;
 }

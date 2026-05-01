@@ -58,7 +58,7 @@ export function PostCard({ post }: { post: FeedPost }) {
         {post.publishedAt && (
           <div className="text-xs text-muted whitespace-nowrap">{formatRelative(post.publishedAt)}</div>
         )}
-        <button className="p-1 -m-1 text-muted hover:text-text" aria-label="Mais opções">
+        <button className="p-2 -m-2 w-11 h-11 grid place-items-center text-muted hover:text-text hover:bg-surface2 rounded-full" aria-label="Mais opções">
           <MoreHorizontal className="w-5 h-5" />
         </button>
       </div>
@@ -75,7 +75,7 @@ export function PostCard({ post }: { post: FeedPost }) {
         </div>
       )}
 
-      <div className="relative aspect-[4/5] bg-surface2 protected" data-protected="true">
+      <div className="relative aspect-[4/5] max-h-[80dvh] bg-surface2 protected" data-protected="true">
         {canSee && post.imageUrl ? (
           <Image
             src={post.imageUrl}

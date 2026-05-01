@@ -43,7 +43,7 @@ export default function LoginPage() {
                   placeholder="E-mail/CPF"
                   autoComplete="email"
                   {...register('email')}
-                  className="w-full h-14 px-5 rounded-full bg-surface2 border border-border text-base focus:outline-none focus:border-brand placeholder:text-muted"
+                  className="w-full h-14 px-5 rounded-full bg-surface2 border border-border text-base focus:outline-none focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/40 placeholder:text-muted"
                 />
                 {errors.email && <p className="px-5 mt-1 text-xs text-red-600">{errors.email.message}</p>}
               </div>
@@ -54,7 +54,7 @@ export default function LoginPage() {
                   placeholder="Senha"
                   autoComplete="current-password"
                   {...register('password')}
-                  className="w-full h-14 px-5 rounded-full bg-surface2 border border-border text-base focus:outline-none focus:border-brand placeholder:text-muted"
+                  className="w-full h-14 px-5 rounded-full bg-surface2 border border-border text-base focus:outline-none focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/40 placeholder:text-muted"
                 />
                 {errors.password && <p className="px-5 mt-1 text-xs text-red-600">{errors.password.message}</p>}
               </div>
@@ -83,12 +83,12 @@ export default function LoginPage() {
                 </svg>
               </SocialButton>
               <SocialButton label="X (Twitter)">
-                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-text">
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current text-text">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
               </SocialButton>
               <SocialButton label="Apple">
-                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-text">
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current text-text">
                   <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12-1.16.46-2.31 1.13-3.08.74-.85 2.05-1.50 3.034-1.57zM20.5 17.27c-.534 1.21-.794 1.76-1.487 2.83-.967 1.5-2.33 3.36-4.02 3.37-1.5.01-1.886-.97-3.92-.96-2.034.01-2.46.97-3.96.96-1.69-.02-2.98-1.71-3.95-3.21-2.71-4.21-2.99-9.16-1.32-11.78 1.18-1.86 3.05-2.95 4.81-2.95 1.79 0 2.92.97 4.4.97 1.43 0 2.31-.97 4.39-.97 1.57 0 3.24.85 4.43 2.32-3.89 2.13-3.26 7.69 1.17 9.43z"/>
                 </svg>
               </SocialButton>

@@ -18,6 +18,12 @@ export class UsersController {
     return this.usersService.subscriptionOffers(limit ? Number(limit) : 12);
   }
 
+  /** /em-alta — agrega 7 seções (top, gratuitos, mimadas, rising, posts, chat, lives). */
+  @Get('em-alta')
+  async emAlta() {
+    return this.usersService.emAlta();
+  }
+
   @Get(':username')
   @UseGuards(OptionalJwtAuthGuard)
   async profile(@Param('username') username: string, @Req() req: Request) {

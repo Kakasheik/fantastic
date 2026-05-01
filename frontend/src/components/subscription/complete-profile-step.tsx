@@ -1,14 +1,16 @@
 'use client';
-import { useForm } from 'react-hook-form';
+import { useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState } from 'react';
 import { api } from '@/lib/api';
+import { maskCPF, maskPhone, digitsOnly, isCPFValid, isPhoneValid } from '@/lib/masks';
+import { extractApiMessage } from '@/lib/api-error';
 
 const schema = z.object({
   nickname:    z.string().min(2, 'Campo obrigatório').max(60),
-  phone:       z.string().min(10, 'Campo obrigatório'),
-  cpf:         z.string().regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'Campo obrigatório'),
+  phone:       z.string().refine(isPhoneValid, 'Celular inválido'),
+  cpf:         z.string().refine(isCPFValid, 'CPF inválido'),
   email:       z.string().email('E-mail inválido'),
   fullName:    z.string().min(3, 'Campo obrigatório').max(120),
   dateOfBirth: z.string().min(1, 'Campo obrigatório'),
@@ -19,8 +21,9 @@ type FormData = z.infer<typeof schema>;
 export function CompleteProfileStep({ onContinue }: { onContinue: () => void }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
+    mode: 'onBlur',
   });
 
   async function onSubmit(values: FormData) {
@@ -28,12 +31,19 @@ export function CompleteProfileStep({ onContinue }: { onContinue: () => void }) 
     try {
       await api('/auth/complete-profile', {
         method: 'POST',
-        body: JSON.stringify(values),
+        body: JSON.stringify({
+          nickname:    values.nickname,
+          phone:       digitsOnly(values.phone),
+          cpf:         digitsOnly(values.cpf),
+          email:       values.email,
+          fullName:    values.fullName,
+          dateOfBirth: values.dateOfBirth,
+        }),
       });
       onContinue();
     } catch (err) {
-      console.error(err);
-      setSubmitError('Não foi possível salvar seus dados. Verifique e tente novamente.');
+      console.error('complete-profile error:', err);
+      setSubmitError(extractApiMessage(err, 'Verifique os dados e tente novamente.'));
     }
   }
 
@@ -45,15 +55,68 @@ export function CompleteProfileStep({ onContinue }: { onContinue: () => void }) 
 
       <div className="grid grid-cols-2 gap-2">
         <Field placeholder="Apelido" {...register('nickname')} error={errors.nickname?.message} />
-        <Field placeholder="Celular" {...register('phone')} error={errors.phone?.message} />
-        <Field placeholder="CPF" {...register('cpf')} error={errors.cpf?.message} />
-        <Field placeholder="E-mail" type="email" {...register('email')} error={errors.email?.message} />
-        <Field placeholder="Nome Completo" {...register('fullName')} error={errors.fullName?.message} containerClass="col-span-2 md:col-span-1" />
-        <Field placeholder="Data de Nascimento" type="date" {...register('dateOfBirth')} error={errors.dateOfBirth?.message} containerClass="col-span-2 md:col-span-1" />
+
+        {/* Celular com máscara */}
+        <Controller
+          control={control}
+          name="phone"
+          render={({ field }) => (
+            <Field
+              placeholder="Celular"
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
+              value={field.value ?? ''}
+              onChange={(e) => field.onChange(maskPhone(e.target.value))}
+              onBlur={field.onBlur}
+              error={errors.phone?.message}
+            />
+          )}
+        />
+
+        {/* CPF com máscara */}
+        <Controller
+          control={control}
+          name="cpf"
+          render={({ field }) => (
+            <Field
+              placeholder="CPF"
+              type="text"
+              inputMode="numeric"
+              value={field.value ?? ''}
+              onChange={(e) => field.onChange(maskCPF(e.target.value))}
+              onBlur={field.onBlur}
+              error={errors.cpf?.message}
+            />
+          )}
+        />
+
+        <Field
+          placeholder="E-mail"
+          type="email"
+          autoComplete="email"
+          {...register('email')}
+          error={errors.email?.message}
+        />
+        <Field
+          placeholder="Nome Completo"
+          autoComplete="name"
+          {...register('fullName')}
+          error={errors.fullName?.message}
+          containerClass="col-span-2 md:col-span-1"
+        />
+        <Field
+          placeholder="Data de Nascimento"
+          type="date"
+          autoComplete="bday"
+          {...register('dateOfBirth')}
+          error={errors.dateOfBirth?.message}
+          containerClass="col-span-2 md:col-span-1"
+        />
       </div>
 
       {submitError && (
-        <p className="text-xs text-red-600 text-center">{submitError}</p>
+        <p className="text-xs text-red-600 text-center px-4">{submitError}</p>
       )}
 
       <button

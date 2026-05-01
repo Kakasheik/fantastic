@@ -112,6 +112,71 @@ export class UsersService {
     }));
   }
 
+  /**
+   * Agrega múltiplas seções para a página /em-alta (estilo Privacy "Top Criadores").
+   * Reutiliza o mesmo pool de criadoras com diferentes orderings.
+   */
+  async emAlta() {
+    const profiles = await this.prisma.creatorProfile.findMany({
+      where: { isActive: true },
+      include: {
+        user:              { select: { id: true, username: true, profilePicture: true, isVerified: true } },
+        subscriptionPlans: { where: { isPromo: true, isActive: true }, orderBy: { discountPercent: 'desc' }, take: 1 },
+      },
+    });
+
+    const items = profiles.map((c) => ({
+      id:             c.user.id,
+      username:       c.user.username,
+      displayName:    c.displayName,
+      profilePicture: c.user.profilePicture,
+      coverImage:     c.coverImage,
+      verified:       c.user.isVerified,
+      subscribers:    c.totalSubscribers,
+      photos:         c.totalPhotos,
+      videos:         c.totalVideos,
+      likes:          c.totalLikes,
+      monthlyPrice:   c.subscriptionPrice,
+      promo: c.subscriptionPlans[0]
+        ? {
+            discount: c.subscriptionPlans[0].discountPercent,
+            months:   c.subscriptionPlans[0].intervalMonths,
+            price:    c.subscriptionPlans[0].price,
+          }
+        : null,
+    }));
+
+    if (items.length === 0) {
+      return {
+        topMonth: [], freeProfiles: [], topPampered: [], rising: [],
+        trendingPosts: [], chatHot: [], oneOnOne: [], livesHot: [],
+      };
+    }
+
+    // Ordenações distintas — em prod, viriam de signals reais (likes recentes, online status, etc.)
+    const byPrice    = [...items].sort((a, b) => a.monthlyPrice - b.monthlyPrice);
+    const bySubs     = [...items].sort((a, b) => b.subscribers - a.subscribers);
+    const byPosts    = [...items].sort((a, b) => (b.photos + b.videos) - (a.photos + a.videos));
+    const byLikes    = [...items].sort((a, b) => b.likes - a.likes);
+    const promosOnly = items.filter((c) => c.promo);
+    const shuffled   = [...items].sort(() => Math.random() - 0.5);
+
+    return {
+      topMonth:      bySubs.slice(0, 6),
+      freeProfiles:  byPrice.slice(0, 6),
+      topPampered:   bySubs.slice(0, 7),
+      rising:        byPosts.slice(0, 6),
+      trendingPosts: byLikes.slice(0, 6),
+      chatHot:       shuffled.slice(0, 6).map((c) => ({ ...c, status: 'Responde em instantes' })),
+      oneOnOne:      promosOnly.slice(0, 3),
+      livesHot:      shuffled.slice(0, 4).map((c) => ({
+        ...c,
+        livesCount: Math.floor(Math.random() * 30) + 1,
+        isLive:     Math.random() > 0.5,
+      })),
+    };
+  }
+
   async subscriptionOffers(limit = 12) {
     const profiles = await this.prisma.creatorProfile.findMany({
       where: { isActive: true },

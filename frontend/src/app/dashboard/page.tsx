@@ -75,8 +75,8 @@ export default function DashboardPage() {
         <CardHeader>
           <h2 className="font-semibold">Últimas transações</h2>
         </CardHeader>
-        <CardContent className="p-0">
-          <table className="w-full text-sm">
+        <CardContent className="p-0 overflow-x-auto">
+          <table className="w-full text-sm min-w-[560px]">
             <thead className="text-muted">
               <tr className="border-b border-border">
                 <th className="text-left p-3 font-medium">Tipo</th>
@@ -92,8 +92,8 @@ export default function DashboardPage() {
                   <td className="p-3"><span className="px-2 py-1 rounded bg-surface2 text-xs">{t.type}</span></td>
                   <td className="p-3">{t.payerUsername ? `@${t.payerUsername}` : '—'}</td>
                   <td className="p-3 text-right">{formatBRL(t.amount)}</td>
-                  <td className="p-3 text-right text-emerald-400 font-medium">{formatBRL(t.netAmount)}</td>
-                  <td className="p-3 text-right text-muted">{formatRelative(t.createdAt)}</td>
+                  <td className="p-3 text-right text-emerald-700 font-medium">{formatBRL(t.netAmount)}</td>
+                  <td className="p-3 text-right text-muted whitespace-nowrap">{formatRelative(t.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -116,7 +116,7 @@ function MetricCard({
         </div>
         <div className="text-2xl font-bold">{value}</div>
         {typeof delta === 'number' && (
-          <div className={`text-xs ${delta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+          <div className={`text-xs ${delta >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
             {delta >= 0 ? '+' : ''}{delta.toFixed(1)}% vs mês anterior
           </div>
         )}

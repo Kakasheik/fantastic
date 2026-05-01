@@ -1,5 +1,9 @@
-import { IsDateString, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsDateString, IsEmail, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
+/**
+ * DTO para completar perfil após guest-register no fluxo de checkout.
+ * Aceita email opcional (sobrescreve placeholder do guest).
+ */
 export class CompleteProfileDto {
   @IsString()
   @MinLength(3)
@@ -22,4 +26,8 @@ export class CompleteProfileDto {
   @IsString()
   @MaxLength(60)
   nickname?: string;
+
+  @IsOptional()
+  @IsEmail({}, { message: 'E-mail inválido' })
+  email?: string;
 }

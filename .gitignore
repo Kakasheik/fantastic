@@ -49,3 +49,11 @@ Thumbs.db
 # Cache
 .eslintcache
 .turbo
+
+# Backups
+*.bak
+*.backup
+*.sqlite.backup
+
+# Render YAML can contain secrets
+backend/render.yaml.local

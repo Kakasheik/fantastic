@@ -33,3 +33,7 @@ html, body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d9d2c4; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #b8b0a0; }
+
+/* Hide scrollbar em carousels horizontais */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

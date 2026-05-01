@@ -14,10 +14,10 @@ export async function api<T = unknown>(path: string, opts: FetchOptions = {}): P
   const { skipAuth, headers, ...rest } = opts;
   const token = skipAuth ? null : useAuthStore.getState().accessToken;
 
-  const finalHeaders: HeadersInit = {
+  const finalHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...headers,
+    ...((headers as Record<string, string>) ?? {}),
   };
 
   const res = await fetch(`${API_BASE}${path}`, {

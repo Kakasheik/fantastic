@@ -2,18 +2,17 @@
 import Link from 'next/link';
 import { Bell } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
-import { UserMenu } from '@/components/layout/user-menu';
 import { useAuthStore } from '@/lib/auth-store';
 
 /**
  * Header minimalista estilo Privacy.
  * Logo à esquerda, sino + avatar à direita.
- * Sem sidebar — navegação principal é o BottomNav.
+ * Avatar leva direto para /profile (que é o hub do usuário).
  */
 export function Header() {
   const user = useAuthStore((s) => s.user);
-  // fallback de exibição enquanto não temos backend conectado
   const display = user ?? { username: 'KA', role: 'SUBSCRIBER' as const };
+  const initials = (display.username.slice(0, 2) || 'KA').toUpperCase();
 
   return (
     <header className="sticky top-0 z-30 bg-bg/90 backdrop-blur-xl border-b border-border">
@@ -23,15 +22,16 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <button
+          <Link
+            href="/atividades"
             className="w-10 h-10 grid place-items-center rounded-full hover:bg-surface2 transition-colors"
             aria-label="Notificações"
           >
             <Bell className="w-5 h-5 text-text" />
-          </button>
-          <UserMenu role={display.role}>
-            <Avatar alt={display.username} size="sm" />
-          </UserMenu>
+          </Link>
+          <Link href="/profile" aria-label="Meu perfil">
+            <Avatar alt={initials} size="sm" />
+          </Link>
         </div>
       </div>
     </header>

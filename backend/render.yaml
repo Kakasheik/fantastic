@@ -1,0 +1,50 @@
+# render.yaml — alternativa de deploy via Render.com (GitHub-based, sem cartão)
+# 1. Faça push deste repo para GitHub
+# 2. Vá em https://dashboard.render.com → New Blueprint → cole URL do GitHub
+# 3. Render detecta este arquivo e cria o service automaticamente
+# 4. Configure os secrets no painel (DATABASE_URL, JWT_*, etc)
+
+services:
+  - type: web
+    name: fantastic-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    rootDir: ./backend
+    region: oregon  # Render free tier
+    plan: free       # Sleeps após 15min sem requisições; ~30s cold start no primeiro request
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+      - key: FRONTEND_URL
+        value: https://fantastic-app.vercel.app
+      - key: CORS_ORIGINS
+        value: https://fantastic-app.vercel.app
+      - key: PIX_RECEIVER_NAME
+        value: FANTASTIC PAGAMENTOS
+      - key: PIX_RECEIVER_CITY
+        value: SAO PAULO
+      - key: PIX_KEY
+        value: fantastic@pix.local
+      - key: PAYMENT_PROVIDER
+        value: mock
+      # Os secrets abaixo você define manualmente no painel Render → Environment
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: WATERMARK_SECRET
+        generateValue: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false

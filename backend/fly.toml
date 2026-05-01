@@ -1,0 +1,38 @@
+# fly.toml — config Fly.io (deploy backend NestJS gratuito 24/7)
+# https://fly.io/docs/reference/configuration/
+
+app = "fantastic-api"
+primary_region = "gru"  # Brasil — São Paulo (mais perto do Brasil)
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+  FRONTEND_URL = "https://fantastic-app.vercel.app"
+  CORS_ORIGINS = "http://localhost:3000,https://fantastic-app.vercel.app"
+  PIX_RECEIVER_NAME = "FANTASTIC PAGAMENTOS"
+  PIX_RECEIVER_CITY = "SAO PAULO"
+  PIX_KEY = "fantastic@pix.local"
+  PAYMENT_PROVIDER = "mock"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"     # economiza no free tier — suspende sem requisições
+  auto_start_machines = true         # liga em ~200ms quando chega request
+  min_machines_running = 0           # 0 = pode dormir; 1 = sempre acordado (gasta mais free hours)
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "30s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/api/v1/health"
+
+[[vm]]
+  size = "shared-cpu-1x"   # free tier: 256MB RAM, suficiente
+  memory = "256mb"
+  cpus = 1

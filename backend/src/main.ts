@@ -33,9 +33,12 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('api/v1');
 
+  // SECURITY: trust proxy ativo p/ obter IP real atrás do load balancer (Fly/Render).
+  app.getHttpAdapter().getInstance().set?.('trust proxy', 1);
+
   const port = Number(process.env.PORT ?? 4000);
   await app.listen(port, '0.0.0.0');
-  logger.log(`Fantastic API rodando em http://localhost:${port}`);
+  logger.log(`Fantastic API rodando em http://0.0.0.0:${port}`);
 }
 
 void bootstrap();

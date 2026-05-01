@@ -1,123 +1,102 @@
-# Fantastic — Guia de Deploy (Supabase + Vercel)
+# Fantastic — Guia de Deploy 24/7 sem custo
 
-## ⚠️ Antes de começar
+## TL;DR
 
-- **Rotacione a service_role key** que foi exposta no chat. Vá em
-  https://supabase.com/dashboard/project/jrgzhzvbhkhlnodtquxm/settings/api
-  e clique em **Reset service_role secret**.
-- Depois, atualize `backend/.env` com a nova chave.
+| O que | Onde | Custo |
+|---|---|---|
+| **Frontend Next.js** | Vercel (já deployado) | $0 |
+| **Banco PostgreSQL** | Supabase (já configurado) | $0 |
+| **Backend NestJS** | Fly.io ou Render (este guia) | $0 |
+| **Tunnel temporário (atual)** | Cloudflared local | $0 (mas precisa do PC ligado) |
 
-## Arquitetura de deploy
+## Opção A — Fly.io (recomendado, deploy via CLI)
 
-```
-┌─────────────┐      ┌──────────────┐      ┌─────────────┐
-│  Vercel     │──────│  Supabase    │      │ Cloudflare  │
-│  (Next.js)  │      │  (Postgres)  │      │     R2      │
-└─────────────┘      └──────────────┘      └─────────────┘
-       │                     ▲                   ▲
-       │                     │                   │
-       └──── Backend NestJS ─┘                   │
-            (Railway/Fly.io/Render)──────────────┘
-```
+### Passos
 
-> **Nota:** Vercel **não suporta** apps NestJS de longa duração nativamente
-> (sem WebSocket persistente). Para o backend, recomendo:
-> - **Railway** (https://railway.app) — `railway up`, suporta Docker
-> - **Fly.io** (https://fly.io) — `fly launch`, leve e barato
-> - **Render** (https://render.com) — deploy direto do GitHub
+1. **Cria conta grátis** em https://fly.io/sign-up (não pede cartão para o free tier básico, mas a verificação de identidade pode pedir; você pode usar email + senha)
+2. **Gera token API** em https://fly.io/user/personal_access_tokens → "Create access token" → copia o token (começa com `fo1_...`)
+3. **Cole o token aqui no chat** que eu deployo automaticamente.
 
-Para a apresentação visual, **só o frontend (Next.js) vai ao Vercel**.
-
-## 1. Configurar Supabase
+### O que vai acontecer (eu rodo no seu CLI):
 
 ```bash
-# 1.1 No painel Supabase, copie a senha do banco:
-#     Project Settings → Database → "Database Password" (ou faça reset)
-
-# 1.2 Migre o backend para Postgres
-cd backend
-bash scripts/use-supabase.sh <SUA_SENHA_DO_DB>
+export FLY_API_TOKEN=<seu token>
+fly launch --config backend/fly.toml --copy-config --no-deploy --region gru
+fly secrets set DATABASE_URL="..." DIRECT_URL="..." \
+  JWT_ACCESS_SECRET="..." JWT_REFRESH_SECRET="..." \
+  COOKIE_SECRET="..." WATERMARK_SECRET="..." \
+  SUPABASE_URL="..." SUPABASE_SERVICE_KEY="..."
+fly deploy --config backend/fly.toml
 ```
 
-O script:
-- Salva backup do `.env` SQLite local
-- Atualiza `DATABASE_URL` e `DIRECT_URL` para o Supabase pooler
-- Troca o provider Prisma para `postgresql`
-- Roda `prisma db push` (cria tabelas no Supabase)
-- Roda o seed (popula 6 criadoras)
+### Características do free tier Fly:
+- ✅ 3 máquinas shared-cpu-1x (256MB RAM cada) gratuitas para sempre
+- ✅ 160GB de banda/mês
+- ✅ HTTPS automático em `fantastic-api.fly.dev`
+- ✅ Auto-suspend quando idle (acorda em ~200ms na primeira request)
+- ✅ Region São Paulo (`gru`) — baixa latência pro Brasil
 
-## 2. Subir backend (Railway, exemplo)
+## Opção B — Render.com (alternativa, deploy via GitHub)
+
+### Passos
+
+1. **Crie repo GitHub** em https://github.com/new (nome: `fantastic`, público ou privado, não importa)
+2. **Push do código** (do seu computador):
+   ```bash
+   cd C:\Users\User\Fantastic
+   git remote add origin https://github.com/SEU_USER/fantastic.git
+   git push -u origin main
+   ```
+3. **Crie conta Render** em https://dashboard.render.com (free, sem cartão)
+4. **New** → **Blueprint** → cola URL do seu repo GitHub
+5. Render detecta o `render.yaml` em `backend/` e cria o serviço
+6. **Adicione os secrets** no painel:
+   - `DATABASE_URL` = string de conexão Supabase (a mesma que está no nosso `.env`)
+   - `DIRECT_URL` = mesma string
+   - `SUPABASE_URL` = `https://jrgzhzvbhkhlnodtquxm.supabase.co`
+   - `SUPABASE_SERVICE_KEY` = sua service key (rotacione antes de copiar)
+7. Clica **Deploy**. URL final: `https://fantastic-api.onrender.com`
+
+### Características do free tier Render:
+- ✅ Sem cartão de crédito necessário
+- ⚠️ Sleeps após 15 min sem requisição (cold start ~30s)
+- ✅ 750 horas/mês (suficiente)
+- ✅ HTTPS automático
+
+## Após deploy: atualizar Vercel
+
+Em qualquer das opções, depois que o backend estiver rodando, atualizo a env var do Vercel:
 
 ```bash
-npm install -g @railway/cli
-railway login
-cd backend
-railway init
-railway up
-# Defina as env vars no painel: DATABASE_URL, JWT_*, etc.
+NEXT_PUBLIC_API_URL=https://fantastic-api.fly.dev/api/v1   # Fly
+# ou
+NEXT_PUBLIC_API_URL=https://fantastic-api.onrender.com/api/v1   # Render
 ```
 
-A URL pública sai algo como `https://fantastic-backend.up.railway.app`.
+E atualizo o CORS no backend pra aceitar `https://fantastic-app.vercel.app`.
 
-## 3. Deploy frontend no Vercel
+## Comparação rápida
 
-### Via Chrome (com Claude)
+| Critério | Fly.io | Render |
+|---|---|---|
+| Cartão obrigatório | Verificação opcional | ❌ Nenhum |
+| Region BR | ✅ São Paulo (gru) | ❌ só Oregon/Frankfurt/Singapore |
+| Cold start | ~200ms | ~30s |
+| Setup | CLI + token | GitHub push + dashboard |
+| Limite gratuito | Sempre on (3 VMs) | 750h/mês com sleep |
 
-Quando você autorizar, eu abro o Chrome e:
-1. Vou para https://vercel.com/new
-2. Aguardo você fazer login (não digito senha)
-3. Importo o repositório GitHub do Fantastic
-4. Configuro as env vars:
-   - `NEXT_PUBLIC_API_URL` = URL do seu backend Railway/Fly
-5. Clico em Deploy
+**Recomendo Fly.io** pela latência pro Brasil. Se preferir simplicidade total via dashboard, vai de Render.
 
-**Pré-requisito**: o código precisa estar em um repositório GitHub.
-Se não estiver, primeiro:
+## Próximos passos pra "production-ready DE VERDADE"
 
-```bash
-cd C:\Users\User\Fantastic
-git init
-git add .
-git commit -m "feat: plataforma Fantastic"
-gh repo create fantastic --public --source=. --push  # GitHub CLI
-```
+(Quando quiser começar a faturar, não só demo pros compradores)
 
-### Via CLI (mais rápido se você já tem login)
-
-```bash
-cd frontend
-npm install -g vercel
-vercel login
-vercel --prod
-```
-
-## 4. MCP Supabase no Claude
-
-Já criei `.mcp.json` no projeto. Para autenticar:
-
-```bash
-# No terminal regular (NÃO na extensão IDE):
-claude /mcp
-# Selecione "supabase" → Authenticate
-```
-
-Após autenticar, posso usar as ferramentas MCP para listar tabelas,
-rodar queries, criar storage buckets, etc.
-
-## 5. Custo estimado
-
-| Serviço     | Plano       | Custo/mês |
-|-------------|-------------|-----------|
-| Supabase    | Free        | $0        |
-| Vercel      | Hobby       | $0        |
-| Railway     | Hobby       | $5        |
-| Cloudflare R2 | Free 10GB | $0        |
-| **Total**   |             | **~$5**   |
-
-## 6. Próximos passos
-
-- [ ] Conectar gateway de pagamento real (CCBill/SegPay) — Pix mock atual
-- [ ] Configurar Cloudflare R2 para uploads de mídia
-- [ ] Configurar Mux para vídeos (HLS + DRM + watermark)
-- [ ] Configurar SumSub (KYC obrigatório Lei 15.211/2025)
-- [ ] Custom domain no Vercel
+- [ ] Domínio próprio (`fantastic.com.br`) apontando pro Vercel
+- [ ] Gateway de pagamento real (CCBill/SegPay com Pix)
+- [ ] Cloudflare R2 ou AWS S3 para upload de mídia (não mais base64)
+- [ ] Mux para vídeos (HLS + DRM + watermark)
+- [ ] SumSub para KYC obrigatório (Lei 15.211/2025)
+- [ ] Resend para envio de e-mails transacionais
+- [ ] Sentry para monitoramento de erros
+- [ ] Painel admin (moderação + financeiro)
+- [ ] LGPD: rotação da `service_role` key do Supabase (foi exposta em chat)

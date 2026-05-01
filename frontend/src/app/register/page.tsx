@@ -93,7 +93,7 @@ const Field = (() => {
       <input
         type={type}
         placeholder={placeholder}
-        className="w-full h-14 px-5 rounded-full bg-surface2 border border-border text-base focus:outline-none focus:border-brand placeholder:text-muted"
+        className="w-full h-14 px-5 rounded-full bg-surface2 border border-border text-base focus:outline-none focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/40 placeholder:text-muted"
         {...rest}
       />
       {error && <p className="px-5 mt-1 text-xs text-red-600">{error}</p>}

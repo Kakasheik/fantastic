@@ -5,10 +5,11 @@
  *   1) Cadastro completo (Apelido, Celular, CPF, E-mail, Nome Completo, DOB)
  *   2) Pagamento — Pix QR + alternativas (Cartão, Google Pay, PicPay, Carteira)
  *
- * Em dev cria um usuário "convidado" automaticamente se ainda não houver sessão.
+ * SECURITY: Em prod, esse modal só abre para usuários autenticados.
+ *           Em dev, criamos guest sintético para destravar o fluxo.
  */
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useAuthStore } from '@/lib/auth-store';
 import { api } from '@/lib/api';
@@ -34,44 +35,42 @@ export interface SubscriptionFlowProps {
 
 export function SubscriptionFlow(props: SubscriptionFlowProps) {
   const [step, setStep] = useState<'profile' | 'payment'>('profile');
+  const [authReady, setAuthReady] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const user = useAuthStore((s) => s.user);
   const setSession = useAuthStore((s) => s.setSession);
 
   useEffect(() => {
-    /**
-     * SECURITY: Em prod, este modal só abre para usuários autenticados.
-     * Em dev, criamos um usuário convidado automaticamente para que o fluxo
-     * funcione sem login manual.
-     */
-    if (!user) {
-      void (async () => {
-        const random = Math.random().toString(36).slice(2, 10);
-        try {
-          const data = await api<{ accessToken: string; user: { id: string; email: string; username: string; role: 'SUBSCRIBER' | 'CREATOR' | 'ADVERTISER' | 'ADMIN' } }>(
-            '/auth/register',
-            {
-              method: 'POST',
-              skipAuth: true,
-              body: JSON.stringify({
-                email:    `guest-${random}@fantastic.local`,
-                username: `guest_${random}`,
-                password: 'guestPassDev1',
-                role:     'SUBSCRIBER',
-              }),
-            },
-          );
-          setSession(data.accessToken, data.user);
-        } catch (err) {
-          console.error('Falha ao criar guest:', err);
-        }
-      })();
-    }
+    if (user) { setAuthReady(true); return; }
+
+    void (async () => {
+      const random = Math.random().toString(36).slice(2, 10);
+      try {
+        const data = await api<{ accessToken: string; user: { id: string; email: string; username: string; role: 'SUBSCRIBER' | 'CREATOR' | 'ADVERTISER' | 'ADMIN' } }>(
+          '/auth/register',
+          {
+            method: 'POST',
+            skipAuth: true,
+            body: JSON.stringify({
+              email:    `guest-${random}@fantastic.local`,
+              username: `guest_${random}`,
+              password: 'GuestPass#Dev2026',
+              role:     'SUBSCRIBER',
+            }),
+          },
+        );
+        setSession(data.accessToken, data.user);
+        setAuthReady(true);
+      } catch (err) {
+        console.error('Falha ao criar sessão:', err);
+        setAuthError('Não foi possível iniciar a sessão. Tente recarregar a página.');
+      }
+    })();
   }, [user, setSession]);
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/55 p-4 animate-fade-in">
       <div className="relative bg-surface1 rounded-2xl border border-border w-full max-w-md max-h-[92dvh] overflow-y-auto">
-        {/* Cover de fundo */}
         <div className="relative h-32">
           {props.creator.coverImage && (
             <Image src={props.creator.coverImage} alt="" fill className="object-cover" sizes="500px" />
@@ -86,7 +85,6 @@ export function SubscriptionFlow(props: SubscriptionFlowProps) {
         </div>
 
         <div className="px-6 pb-6">
-          {/* Avatar + nome */}
           <div className="flex items-center gap-3 -mt-8 mb-4">
             <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-surface1 bg-surface2 relative flex-shrink-0">
               {props.creator.profilePicture && (
@@ -99,21 +97,25 @@ export function SubscriptionFlow(props: SubscriptionFlowProps) {
             </div>
           </div>
 
-          {/* Benefícios */}
           <Benefits />
 
-          {step === 'profile' && (
-            <CompleteProfileStep
-              onContinue={() => setStep('payment')}
-            />
+          {!authReady && !authError && (
+            <div className="py-10 flex flex-col items-center gap-3 text-muted text-sm">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              Iniciando sessão segura...
+            </div>
           )}
 
-          {step === 'payment' && (
-            <PaymentStep
-              creator={props.creator}
-              plan={props.plan}
-              onClose={props.onClose}
-            />
+          {authError && (
+            <div className="py-6 text-center text-red-600 text-sm">{authError}</div>
+          )}
+
+          {authReady && step === 'profile' && (
+            <CompleteProfileStep onContinue={() => setStep('payment')} />
+          )}
+
+          {authReady && step === 'payment' && (
+            <PaymentStep creator={props.creator} plan={props.plan} onClose={props.onClose} />
           )}
         </div>
       </div>
