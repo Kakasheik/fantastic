@@ -1,0 +1,310 @@
+// =====================================================================
+// Fantastic — Schema Prisma (SQLite para dev local)
+// SECURITY: Senhas em bcrypt; campos enum-like usam String + tipos TS.
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================================
+// USER & PROFILE
+// =====================================================================
+
+model User {
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  username              String    @unique
+  passwordHash          String
+  role                  String    @default("SUBSCRIBER") // SUBSCRIBER | CREATOR | ADVERTISER | ADMIN
+
+  // Dados de cadastro completo (KYC light) — preenchidos no fluxo de checkout
+  fullName              String?
+  cpf                   String?
+  phone                 String?
+  dateOfBirth           DateTime?
+  nickname              String?
+
+  isVerified            Boolean   @default(false)
+  isAgeVerified         Boolean   @default(false)
+  ageVerificationToken  String?
+  profilePicture        String?
+  bio                   String?
+  walletBalance         Float     @default(0)
+  twoFactorSecret       String?
+  twoFactorEnabled      Boolean   @default(false)
+  lastLoginAt           DateTime?
+  lastLoginIp           String?
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+
+  creatorProfile        CreatorProfile?
+  subscriptionsAsFan    Subscription[]    @relation("FanSubscriptions")
+  subscriptionsAsCreator Subscription[]   @relation("CreatorSubscriptions")
+  posts                 Post[]
+  postLikes             PostLike[]
+  comments              Comment[]
+  paidTransactions      Transaction[]     @relation("Payer")
+  receivedTransactions  Transaction[]     @relation("Payee")
+  refreshTokens         RefreshToken[]
+  consents              ConsentLog[]
+  notifications         Notification[]
+  auditLogs             AuditLog[]
+
+  @@index([role])
+  @@index([deletedAt])
+}
+
+model CreatorProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  displayName         String
+  coverImage          String?
+  bio                 String?
+  subscriptionPrice   Float
+  trialDays           Int      @default(0)
+  totalEarnings       Float    @default(0)
+  totalSubscribers    Int      @default(0)
+  totalPosts          Int      @default(0)
+  totalPhotos         Int      @default(0)
+  totalVideos         Int      @default(0)
+  totalLocked         Int      @default(0)
+  totalLikes          Int      @default(0)
+  isActive            Boolean  @default(true)
+  payoutMethod        String?
+  socialLinks         String?  // JSON string: {twitter, tiktok, instagram}
+  categories          String?  // JSON array
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionPlans   SubscriptionPlan[]
+
+  @@index([isActive])
+  @@index([totalSubscribers])
+}
+
+// =====================================================================
+// SUBSCRIPTION
+// =====================================================================
+
+model SubscriptionPlan {
+  id                String   @id @default(cuid())
+  creatorProfileId  String
+  name              String
+  intervalMonths    Int
+  price             Float
+  discountPercent   Float    @default(0)
+  isPromo           Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  displayOrder      Int      @default(0)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  creatorProfile    CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  subscriptions     Subscription[]
+
+  @@index([creatorProfileId, isActive])
+}
+
+model Subscription {
+  id                      String    @id @default(cuid())
+  subscriberId            String
+  creatorId               String
+  planId                  String?
+  status                  String    @default("PENDING") // PENDING | ACTIVE | CANCELLED | EXPIRED | TRIAL
+  currentPeriodStart      DateTime?
+  currentPeriodEnd        DateTime?
+  cancelledAt             DateTime?
+  trialEndsAt             DateTime?
+  price                   Float
+  pixCode                 String?
+  pixQrCodeUrl            String?
+  gatewaySubscriptionId   String?   @unique
+  gatewayProvider         String?
+  autoRenew               Boolean   @default(true)
+
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  subscriber              User              @relation("FanSubscriptions",     fields: [subscriberId], references: [id])
+  creator                 User              @relation("CreatorSubscriptions", fields: [creatorId],    references: [id])
+  plan                    SubscriptionPlan? @relation(fields: [planId],       references: [id])
+  transactions            Transaction[]
+
+  @@unique([subscriberId, creatorId])
+  @@index([subscriberId, status])
+  @@index([creatorId, status])
+}
+
+// =====================================================================
+// CONTENT
+// =====================================================================
+
+model Post {
+  id              String      @id @default(cuid())
+  creatorId       String
+  type            String      @default("PHOTO") // PHOTO | VIDEO | AUDIO | TEXT
+  caption         String?
+  imageUrl        String?
+  thumbnailUrl    String?
+  isLocked        Boolean     @default(false)
+  ppvPrice        Float?
+  publishedAt     DateTime?
+  viewCount       Int         @default(0)
+  likeCount       Int         @default(0)
+  commentCount    Int         @default(0)
+  isPinned        Boolean     @default(false)
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+
+  creator         User        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  likes           PostLike[]
+  comments        Comment[]
+
+  @@index([creatorId])
+  @@index([publishedAt])
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+// =====================================================================
+// TRANSACTIONS
+// =====================================================================
+
+model Transaction {
+  id                       String        @id @default(cuid())
+  payerId                  String?
+  payeeId                  String?
+  subscriptionId           String?
+  type                     String        // SUBSCRIPTION | PPV | TIP | AD_CREDIT
+  amount                   Float
+  platformFee              Float
+  netAmount                Float
+  currency                 String        @default("BRL")
+  status                   String        @default("PENDING") // PENDING | COMPLETED | REFUNDED | CHARGEBACK | FAILED
+  gatewayTransactionId     String?       @unique
+  gatewayProvider          String?
+  paymentMethod            String?
+  metadata                 String?       // JSON
+
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+
+  payer                    User?         @relation("Payer", fields: [payerId], references: [id])
+  payee                    User?         @relation("Payee", fields: [payeeId], references: [id])
+  subscription             Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@index([payerId])
+  @@index([payeeId])
+  @@index([status])
+}
+
+// =====================================================================
+// AUTH / LGPD / AUDIT
+// =====================================================================
+
+model RefreshToken {
+  id              String    @id @default(cuid())
+  userId          String
+  tokenHash       String    @unique
+  family          String
+  ipAddress       String?
+  userAgent       String?
+  revokedAt       DateTime?
+  expiresAt       DateTime
+
+  createdAt       DateTime  @default(now())
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([family])
+}
+
+model ConsentLog {
+  id              String   @id @default(cuid())
+  userId          String
+  policyVersion   String
+  policyType      String
+  granted         Boolean
+  ipAddress       String?
+  userAgent       String?
+
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  userId          String?
+  action          String
+  resource        String?
+  ipAddress       String?
+  userAgent       String?
+  metadata        String?  // JSON
+
+  createdAt       DateTime @default(now())
+
+  user            User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String
+  type        String
+  title       String
+  body        String?
+  data        String?   // JSON
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

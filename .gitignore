@@ -1,0 +1,51 @@
+# Dependências
+node_modules/
+.pnp
+.pnp.js
+
+# Build
+dist/
+build/
+.next/
+out/
+
+# Env (NUNCA commitar — secrets)
+.env
+.env.local
+.env.*.local
+.env.supabase
+.env.production
+*.env.backup
+*.sqlite.backup
+
+# Prisma
+*.db
+prisma/migrations/dev.db*
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Test
+coverage/
+*.lcov
+
+# Nginx / certbot
+nginx/certbot/conf/
+nginx/certbot/www/
+
+# OS
+Thumbs.db
+
+# Cache
+.eslintcache
+.turbo

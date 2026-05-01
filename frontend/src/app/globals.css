@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  background-color: #f7f3ec;
+  color: #111111;
+}
+
+/* SECURITY: Bloqueia seleção/arraste em containers .protected */
+.protected img,
+.protected video,
+.protected [data-protected="true"] {
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  pointer-events: none;
+}
+.protected [data-interactive="true"] { pointer-events: auto; }
+
+/* Logo "Privacy-like": ponto laranja após o nome */
+.brand-logo::after {
+  content: ".";
+  color: #ff5722;
+}
+
+/* Scrollbar discreta */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d9d2c4; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #b8b0a0; }

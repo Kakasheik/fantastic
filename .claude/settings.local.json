@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(docker --version)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(echo \"Started dev server, PID=$!\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} | %{size_download} bytes | %{time_total}s\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"/login   → HTTP %{http_code} | %{time_total}s\\\\n\" http://localhost:3000/login)",
+      "Bash(curl -s -o /dev/null -w \"/register → HTTP %{http_code} | %{time_total}s\\\\n\" http://localhost:3000/register)",
+      "Bash(wait)",
+      "Bash(curl -s -o /dev/null -w \"/         → %{http_code} \\(%{time_total}s\\)\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"/login    → %{http_code} \\(%{time_total}s\\)\\\\n\" http://localhost:3000/login)",
+      "Bash(curl -s -o /dev/null -w \"/register → %{http_code} \\(%{time_total}s\\)\\\\n\" http://localhost:3000/register)",
+      "Bash(curl -s -o /dev/null -w \"/em-alta  → %{http_code} \\(%{time_total}s\\)\\\\n\" http://localhost:3000/em-alta)",
+      "Bash(curl -s -o /dev/null -w \"/chat     → %{http_code} \\(%{time_total}s\\)\\\\n\" http://localhost:3000/chat)",
+      "Bash(curl -s http://localhost:3000/login)",
+      "Bash(curl -s http://localhost:3000/em-alta)",
+      "Bash(mkdir -p src/infrastructure/prisma)",
+      "Bash(ls src/infrastructure/prisma/)",
+      "Bash(npx prisma *)",
+      "Bash(echo \"Backend starting... PID=$!\")",
+      "Bash(rm -f \"C:/Users/User/Fantastic/backend/src/modules/subscriptions/webhook.controller.ts\")",
+      "Bash(curl -s http://localhost:4000/api/v1/users/top)",
+      "Bash(curl -s http://localhost:4000/api/v1/users/badmi)",
+      "Bash(curl -s http://localhost:4000/api/v1/posts/feed)",
+      "Bash(echo \"Frontend reiniciando, PID=$!\")",
+      "Bash(curl -s -o /dev/null -w \"Frontend → HTTP %{http_code}\\\\n\" http://127.0.0.1:3000/)"
+    ]
+  }
+}
