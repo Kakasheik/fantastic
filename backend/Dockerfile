@@ -1,35 +1,29 @@
-# Fantastic Backend — Dockerfile multi-stage, otimizado para Fly.io / Render / Railway
-FROM node:22-alpine AS deps
+# Fantastic Backend — Dockerfile single-stage (mais confiável em hosts free).
+# Tradeoff: imagem ~30% maior, mas evita bugs de COPY entre stages.
+
+FROM node:22-alpine
 WORKDIR /app
-RUN apk add --no-cache libc6-compat openssl python3 make g++
+
+# Build deps (sharp, prisma, bcrypt nativo)
+RUN apk add --no-cache libc6-compat openssl python3 make g++ tini
+
+# 1. Dependências
 COPY package*.json ./
 COPY prisma ./prisma
 RUN npm ci --legacy-peer-deps
 
-FROM node:22-alpine AS builder
-WORKDIR /app
-RUN apk add --no-cache libc6-compat openssl
-COPY --from=deps /app/node_modules ./node_modules
+# 2. Source + build
 COPY . .
 RUN npx prisma generate && npm run build
 
-FROM node:22-alpine AS runner
-WORKDIR /app
+# 3. Verifica que dist/main.js foi gerado (early-fail visível em log)
+RUN test -f dist/main.js && echo "✓ dist/main.js OK ($(stat -c%s dist/main.js) bytes)" || (echo "✗ FALHA: dist/main.js não existe" && ls -la dist/ 2>/dev/null && exit 1)
+
+# 4. Runtime
 ENV NODE_ENV=production
-RUN apk add --no-cache libc6-compat openssl tini
-RUN addgroup -g 1001 nodejs && adduser -u 1001 -G nodejs -s /bin/sh -D nestjs
-
-COPY --from=builder --chown=nestjs:nodejs /app/dist          ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules  ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/prisma        ./prisma
-COPY --from=builder --chown=nestjs:nodejs /app/package.json  ./package.json
-
-USER nestjs
-# Fly.io / Render mapeiam dinamicamente; usamos PORT env var
-EXPOSE 8080
 ENV PORT=8080
+EXPOSE 8080
 
-# tini garante PID 1 limpo + sinais propagados (k8s/docker safe)
+# tini = PID 1 limpo, propaga sinais
 ENTRYPOINT ["/sbin/tini", "--"]
-# Aplica schema (db push) na primeira execução; em prod estável use migrations
 CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node dist/main.js"]
