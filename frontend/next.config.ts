@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   images: {
+    // SECURITY/UX: bypassa /_next/image (que estava 400 com Supabase Storage no Vercel free).
+    // Carrega direto do CDN público. Trade-off: sem otimização auto de tamanho/formato,
+    // mas elimina o "INVALID_IMAGE_OPTIMIZE_REQUEST" e funciona com qualquer host.
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: '*.r2.cloudflarestorage.com' },
       { protocol: 'https', hostname: '*.amazonaws.com' },
@@ -12,7 +16,6 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'images.pexels.com' },
       { protocol: 'https', hostname: 'i.pravatar.cc' },
-      // Supabase Storage (uploads das criadoras)
       { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'https', hostname: 'jrgzhzvbhkhlnodtquxm.supabase.co' },
     ],
