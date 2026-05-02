@@ -42,6 +42,19 @@ const PPV_CAPTIONS = [
 ];
 const PPV_PRICES: (number | null)[] = [null, 19.90, 24.90, 29.90, 39.90, 49.90, 79.90, null, 14.90, 99.90];
 
+const PUBLIC_CAPTIONS = [
+  '🔥 Bom dia, gostosos 💋',
+  '✨ Foto nova hoje! Que tal? Deixa o coração aí 💕',
+  '😘 Vem me ver no perfil, tem muito mais',
+  '💋 Tô on no chat, manda DM 😉',
+  '🌹 Olha o look novo! Gostaram?',
+  '🥰 Sextou, bb! Quem tá comigo hoje?',
+  '😏 Fim de semana cheio de novidade — assina pra ver tudo',
+  '💖 Obrigada pelo carinho de sempre, amo vocês',
+  '✨ Bastidor de hoje 📸',
+  '😈 Tem mais foto desse ensaio nas mensagens',
+];
+
 function slugify(s: string): string {
   return s
     .normalize('NFD').replace(/[̀-ͯ]/g, '')   // remove acentos
@@ -128,10 +141,16 @@ async function processCreator(folderName: string, folderPath: string, idx: numbe
     ? await upload(coverFileChosen, 'cover')
     : avatar;
 
-  // Posts: ppv (com PPV price), feed (lock só pra assinante), depois extras
-  type PostInput = { url: string; locked: true; ppv: number | null; caption: string };
+  // Posts:
+  //  - ppv.* → locked com PPV price (pago pra desbloquear)
+  //  - feed.* + extras → PUBLICOS (isLocked=false), aparecem nítidos no feed pra atrair
+  //
+  // Razão: dá pra criadora um teaser público que serve de promo (igual Privacy/IG).
+  // O conteúdo realmente quente fica no PPV/assinatura.
+  type PostInput = { url: string; locked: boolean; ppv: number | null; caption: string };
   const posts: PostInput[] = [];
 
+  // PPV — único conteúdo bloqueado por padrão
   if (ppvFile) {
     const url = await upload(ppvFile, 'ppv');
     posts.push({
@@ -139,31 +158,35 @@ async function processCreator(folderName: string, folderPath: string, idx: numbe
       caption: '🔥 PPV liberado: pacote completo + vídeo HD sem censura',
     });
   }
+
+  // Feed — público (foto promo)
   if (feedFile && feedFile !== coverFileChosen) {
     const url = await upload(feedFile, 'feed');
     posts.push({
-      url, locked: true, ppv: null,
-      caption: '💋 Conteúdo exclusivo da semana — só pra assinantes',
+      url, locked: false, ppv: null,
+      caption: PUBLIC_CAPTIONS[(idx + 0) % PUBLIC_CAPTIONS.length],
     });
   } else if (feedFile && feedFile === coverFileChosen) {
-    // já uploadeado como cover, reusa
     posts.push({
-      url: cover, locked: true, ppv: null,
-      caption: '💋 Conteúdo exclusivo da semana — só pra assinantes',
+      url: cover, locked: false, ppv: null,
+      caption: PUBLIC_CAPTIONS[(idx + 0) % PUBLIC_CAPTIONS.length],
     });
   }
+
+  // Extras — públicos (foto promo)
   for (const [i, file] of extras.entries()) {
     const url = await upload(file, `extra${i + 1}`);
     posts.push({
-      url, locked: true, ppv: PPV_PRICES[(idx + i + 1) % PPV_PRICES.length],
-      caption: PPV_CAPTIONS[(idx + i + 2) % PPV_CAPTIONS.length],
+      url, locked: false, ppv: null,
+      caption: PUBLIC_CAPTIONS[(idx + i + 1) % PUBLIC_CAPTIONS.length],
     });
   }
-  // Se não tem nenhum post, usa o avatar pelo menos como teaser
-  if (posts.length === 0) {
-    posts.push({
-      url: avatar, locked: true, ppv: 19.90,
-      caption: '🔥 Conteúdo +18 exclusivo — assina pra ver tudo',
+
+  // Se não tem extras nem feed, e só tem ppv, criar 1 post com avatar como public
+  if (posts.length === 0 || posts.every((p) => p.locked)) {
+    posts.unshift({
+      url: avatar, locked: false, ppv: null,
+      caption: PUBLIC_CAPTIONS[(idx + 7) % PUBLIC_CAPTIONS.length],
     });
   }
 
