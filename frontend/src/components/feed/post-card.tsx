@@ -243,18 +243,21 @@ export function PostCard({ post }: { post: FeedPost }) {
   );
 }
 
+/**
+ * Foto inteira borrada (sem corte) — paywall mais limpo.
+ * scale-110 evita ver as bordas brancas que o blur cria.
+ */
 function BlurredCenterImage({ src }: { src: string }) {
   return (
-    <div className="absolute inset-0 grid grid-cols-3">
-      <div className="relative overflow-hidden">
-        <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110" />
-      </div>
-      <div className="relative overflow-hidden">
-        <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
-      </div>
-      <div className="relative overflow-hidden">
-        <img src={src} alt="" className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110" />
-      </div>
+    <div className="absolute inset-0 overflow-hidden">
+      <img
+        src={src}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110"
+        draggable={false}
+      />
+      {/* leve gradiente escuro pra dar contraste no overlay branco do cadeado */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/40" />
     </div>
   );
 }
