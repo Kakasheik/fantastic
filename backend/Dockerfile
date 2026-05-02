@@ -14,6 +14,8 @@ RUN npm ci --legacy-peer-deps
 
 # 2. Source + build
 COPY . .
+# Limpa cache incremental tsc (evita "build vazio" entre rebuilds)
+RUN rm -f tsconfig.tsbuildinfo && rm -rf dist
 RUN npx prisma generate && npm run build
 
 # 3. Verifica que dist/main.js foi gerado (early-fail visível em log)
