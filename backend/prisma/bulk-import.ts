@@ -259,7 +259,7 @@ async function processCreator(folderName: string, folderPath: string, idx: numbe
         caption:      p.caption,
         imageUrl:     p.url,
         thumbnailUrl: p.url,
-        isLocked:     true,
+        isLocked:     p.locked,        // ← respeita flag de cada post
         ppvPrice:     p.ppv,
         publishedAt:  new Date(Date.now() - i * 1000 * 60 * 60 * 6 - idx * 1000 * 60 * 60 * 24),
         likeCount:    Math.floor(Math.random() * 2500) + 500,
@@ -268,7 +268,10 @@ async function processCreator(folderName: string, folderPath: string, idx: numbe
     });
   }
 
-  console.log(`  ✅ ${posts.length} posts (todos lockados, PPV em ${posts.filter((p) => p.ppv).length})`);
+  const pubCount  = posts.filter((p) => !p.locked).length;
+  const lockCount = posts.filter((p) =>  p.locked).length;
+  const ppvCount  = posts.filter((p) =>  p.ppv).length;
+  console.log(`  ✅ ${posts.length} posts (${pubCount} públicos, ${lockCount} lockados, ${ppvCount} PPV)`);
 }
 
 async function main() {
