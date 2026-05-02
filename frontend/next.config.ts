@@ -10,7 +10,11 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '*.mux.com' },
       { protocol: 'https', hostname: 'image.mux.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'images.pexels.com' },
       { protocol: 'https', hostname: 'i.pravatar.cc' },
+      // Supabase Storage (uploads das criadoras)
+      { protocol: 'https', hostname: '*.supabase.co' },
+      { protocol: 'https', hostname: 'jrgzhzvbhkhlnodtquxm.supabase.co' },
     ],
   },
   async headers() {
